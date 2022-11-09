@@ -24,6 +24,7 @@ app.get("/", (req, res) => {
 async function run() {
     try {
         const serviceCollection = client.db("photoClub").collection("services");
+        const reviewCollection = client.db("photoClub").collection("reviews");
 
         app.post("/addservice", async (req, res) => {
             const service = req.body;
@@ -47,11 +48,27 @@ async function run() {
         app.get("/service/:id", async (req, res) => {
             const id = req.params.id;
             // console.log(id);
-            const query = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
             const result = await serviceCollection.findOne(query);
             res.send(result);
-            
         });
+
+        // add review
+        app.post("/addreview", async (req, res) => {
+            const reviewInfo = req.body;
+            // console.log(reviewInfo);
+            const result = await reviewCollection.insertOne(reviewInfo);
+            res.send(result);
+        });
+
+        // show review
+        app.get('/reviews/:id', async(req, res) => {
+            const id = req.params.id;
+            const query = {serviceId: id};
+            const cursor = reviewCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
     } finally {
     }
 }
