@@ -62,13 +62,28 @@ async function run() {
         });
 
         // show review
-        app.get('/reviews/:id', async(req, res) => {
+        app.get("/reviews/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {serviceId: id};
+            const query = { serviceId: id };
             const cursor = reviewCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
-        })
+        });
+        app.get("/myreviews/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { reviewerId: id };
+            const cursor = reviewCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
+        // Delete review by id
+        app.delete("/myreviews/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await reviewCollection.deleteOne(query);
+            res.send(result);
+        });
     } finally {
     }
 }
