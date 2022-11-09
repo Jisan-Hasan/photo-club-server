@@ -1,49 +1,62 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 const app = express();
 const port = process.env.PORT || 5000;
 const cors = require("cors");
-require('dotenv').config();
+require("dotenv").config();
 
 // middleware
 app.use(cors());
 app.use(express.json());
 
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.lxf9vua.mongodb.net/?retryWrites=true&w=majority`;
 // console.log(uri);
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
-
-
+const client = new MongoClient(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverApi: ServerApiVersion.v1,
+});
 
 app.get("/", (req, res) => {
     res.send("Server is responding");
 });
 
+async function run() {
+    try {
+        const serviceCollection = client.db("photoClub").collection("services");
 
-async function run(){
-    try{
-        const serviceCollection = client.db('photoClub').collection('services');
-
-
-        app.post('/addservice', async(req,res) => {
+        app.post("/addservice", async (req, res) => {
             const service = req.body;
             // console.log(service);
             const result = await serviceCollection.insertOne(service);
             res.send(result);
-        })
+        });
 
-        app.get('/service', async(req, res) => {
+        app.get("/service", async (req, res) => {
             const query = {};
             const cursor = serviceCollection.find(query).limit(3);
             const result = await cursor.toArray();
             res.send(result);
-        })
-    } finally{}
+        });
+        app.get("/allservices", async (req, res) => {
+            const query = {};
+            const cursor = serviceCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+        app.get("/service/:id", async (req, res) => {
+            const id = req.params.id;
+            // console.log(id);
+            const query = {_id: ObjectId(id)};
+            const result = await serviceCollection.findOne(query);
+            res.send(result);
+            
+        });
+    } finally {
+    }
 }
 
-run().catch(e => console.log(e));
-
+run().catch((e) => console.log(e));
 
 app.listen(port, () => {
     console.log("Server is running on port: ", port);
