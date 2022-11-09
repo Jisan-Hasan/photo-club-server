@@ -32,6 +32,13 @@ async function run(){
             const result = await serviceCollection.insertOne(service);
             res.send(result);
         })
+
+        app.get('/service', async(req, res) => {
+            const query = {};
+            const cursor = serviceCollection.find(query).limit(3);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
     } finally{}
 }
 
