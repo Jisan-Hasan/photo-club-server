@@ -1,5 +1,6 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 5000;
 const cors = require("cors");
@@ -21,10 +22,34 @@ app.get("/", (req, res) => {
     res.send("Server is responding");
 });
 
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        res.status(401).send({ message: "Unauthorized Access" });
+    }
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token,process.env.ACCESS_TOKEN_SECRET, function(err, decoded){
+        if(err){
+            res.status(401).send({ message: "Unauthorized Access" });
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 async function run() {
     try {
         const serviceCollection = client.db("photoClub").collection("services");
         const reviewCollection = client.db("photoClub").collection("reviews");
+
+        app.post("/jwt", (req, res) => {
+            const user = req.body;
+            // console.log(user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: "1h",
+            });
+            res.send({ token });
+        });
 
         app.post("/addservice", async (req, res) => {
             const service = req.body;
@@ -69,7 +94,9 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         });
-        app.get("/myreviews/:id", async (req, res) => {
+        app.get("/myreviews/:id", verifyJWT, async (req, res) => {
+            const decoded = req.decoded;
+            // console.log(decoded);
             const id = req.params.id;
             const query = { reviewerId: id };
             const cursor = reviewCollection.find(query);
@@ -102,7 +129,11 @@ async function run() {
                     review: review.review,
                 },
             };
-            const result = await reviewCollection.updateOne(query, updateReview, options);
+            const result = await reviewCollection.updateOne(
+                query,
+                updateReview,
+                options
+            );
             res.send(result);
         });
     } finally {
